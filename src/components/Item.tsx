@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSortable, arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Box, Checkbox, Collapse, FormControlLabel, FormGroup, IconButton, Typography } from '@mui/material';
@@ -10,6 +10,7 @@ import {
   closestCorners,
   useSensors,
   useSensor,
+  DragEndEvent
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 
@@ -21,7 +22,7 @@ type TreeItemProps = {
   is_child?: boolean
 };
 
-const SortableTreeItem = ({ id, name, children, toAssin, is_child = false }: TreeItemProps) => {
+const SortableTreeItem = ({ id, name, children, toAssin, is_child }: TreeItemProps) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -63,9 +64,7 @@ const SortableTreeItem = ({ id, name, children, toAssin, is_child = false }: Tre
     cursor: 'grab',
   };
 
-
-
-  function handleDragEnd(event) {
+  function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
 
     if (active.id !== over.id) {
@@ -80,24 +79,18 @@ const SortableTreeItem = ({ id, name, children, toAssin, is_child = false }: Tre
     }
   }
 
+  useEffect(() => {
+    console.log("#toAssin", toAssin)
+  }, [toAssin])
+
 
   return (
     <div ref={setNodeRef} style={style} >
       <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "5px",
-          gap: '5px'
-        }}
+        sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px", gap: '5px' }}
       >
 
-        <Box sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: '5px'
-        }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: '5px' }}>
 
           <button style={buttonStyle} {...attributes} {...listeners}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0 }}>
@@ -115,20 +108,17 @@ const SortableTreeItem = ({ id, name, children, toAssin, is_child = false }: Tre
               {!showChildren ?
                 <ChevronRight /> : <KeyboardArrowDown />
               }
-
             </IconButton>
           }
-          <Typography variant="h6" fontSize={16}>{name}</Typography>
-
+          <Typography variant="h6" fontSize={16}>{name + ' ' + toAssin}</Typography>
         </Box>
         {
           toAssin && is_child &&
           <FormGroup>
-            <FormControlLabel control={<Checkbox style={{ color: "#BF2F38" }} checked={true} />} label="Visível" />
+              <FormControlLabel control={<Checkbox style={{ color: "#BF2F38" }} checked={true} size='small' />} label="Visível" />
           </FormGroup>
         }
       </Box>
-
 
       <Collapse in={showChildren} timeout="auto" unmountOnExit>
         <DndContext
@@ -136,20 +126,17 @@ const SortableTreeItem = ({ id, name, children, toAssin, is_child = false }: Tre
           sensors={sensors}
           onDragEnd={toAssin ? handleDragEnd : () => {}}
         >
-
           <SortableContext items={_children} strategy={verticalListSortingStrategy}>
             <div style={childContainerStyle}>
               {_children?.map((child, key) => {
                 return (
-                  <SortableTreeItem is_child toAssin key={key} id={child.id} name={child.title} children={child.children} />
+                  <SortableTreeItem is_child toAssin={toAssin} key={key} id={child.id} name={child.title} children={child.children} />
                 );
               })}
             </div>
           </SortableContext>
         </DndContext>
       </Collapse>
-
-
     </div>
   );
 };
