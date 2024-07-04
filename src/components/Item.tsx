@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useSortable, arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { useState } from 'react';
+import { useSortable, SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Box, Checkbox, Collapse, FormControlLabel, FormGroup, IconButton, Typography } from '@mui/material';
 import { ChevronRight, DragIndicator, KeyboardArrowDown } from '@mui/icons-material';
@@ -67,22 +67,18 @@ const SortableTreeItem = ({ id, name, children, toAssin, is_child }: TreeItemPro
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
 
+    console.log({ active: active, over: over })
+
     if (active.id !== over.id) {
       setChildren((items) => {
         const oldIndex = items.findIndex((child) => child.id === active.id);
         const newIndex = items.findIndex((child) => child.id === over.id);
-
         const x = arrayMove(items, oldIndex, newIndex);
         
-        return x ; 
+        return x; 
       });
     }
   }
-
-  useEffect(() => {
-    console.log("#toAssin", toAssin)
-  }, [toAssin])
-
 
   return (
     <div ref={setNodeRef} style={style} >
@@ -91,12 +87,19 @@ const SortableTreeItem = ({ id, name, children, toAssin, is_child }: TreeItemPro
       >
 
         <Box sx={{ display: "flex", alignItems: "center", gap: '5px' }}>
-
-          <button style={buttonStyle} {...attributes} {...listeners}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0 }}>
+          {toAssin ?
+            <button style={buttonStyle} {...attributes} {...listeners}>
+              <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
               <DragIndicator sx={{ color: "#737373" }} />
-            </Box>
-          </button>
+              </div>
+            </button>
+            :
+            <button style={buttonStyle} {...attributes} {...listeners}>
+              <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+                <DragIndicator sx={{ color: "#737373" }} />
+              </div>
+            </button>
+          }
           {children?.length > 0 &&
             <IconButton
               onClick={() => {

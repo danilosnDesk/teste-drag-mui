@@ -13,7 +13,7 @@ import {
 import Container from './components/Container';
 import { useState } from 'react';
 import { assined, toAssin } from './data';
-import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 
 function App() {
   const sensors = useSensors(
@@ -31,7 +31,8 @@ function App() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [items, setItems] = useState<{ [key: string]: itemProps[] }>({
     assined: assined,
-    toAssin: toAssin
+    toAssin: toAssin,
+    voided: []
   });
 
   function handleDragStart(event: DragStartEvent) {
@@ -40,8 +41,14 @@ function App() {
     setActiveId(id);
   }
 
+  function arrayMove(array, fromIndex, toIndex) {
+    const newArray = array.slice();
+    const [movedItem] = newArray.splice(fromIndex, 1);
+    newArray.splice(toIndex, 0, movedItem);
+    return newArray;
+  }
+
   function handleDragOver(event: DragOverEvent) {
-    console.log("#drag over event", event);
     const { active, over } = event;
     const { id } = active;
     const overId = over?.id;
@@ -49,44 +56,52 @@ function App() {
     const activeContainer = findContainer(id);
     let overContainer = overId ? findContainer(overId) : null;
 
+    // caso que um contaciner não tenha nenhum item
     if (!overContainer && overId && items[overId]) {
-      overContainer = String(overId);
+      overContainer = overId;
     }
 
     if (!activeContainer || !overContainer) {
       return;
     }
 
-    /*     if (activeContainer === overContainer) {
-          setItems((prev) => {
-            return {
-              ...prev,
-              [overContainer]: arrayMove(prev[activeContainer], ),
-            };
-          });
-        } */
+    if (activeContainer === overContainer) {
+      setItems((prev) => {
+        const activeItems = prev[activeContainer];
+        const activeIndex = activeItems.findIndex((item) => item.id === id);
+        const overIndex = activeItems.findIndex((item) => item.id === overId);
+        const newIndex = overIndex >= 0 ? overIndex : (activeItems.length || 0);
 
-    setItems((prev) => {
-      const activeItems = prev[activeContainer];
-      const overItems = prev[overContainer];
-      const activeIndex = activeItems.findIndex((item) => item.id === id);
-      const overIndex = overItems.findIndex((item) => item.id === overId);
-      const newIndex = overIndex >= 0 ? overIndex : overItems.length - 1;
+        const updatedActiveItems = arrayMove(activeItems, activeIndex, newIndex);
 
-      const movedItem = activeItems[activeIndex];
-      const updatedActiveItems = activeItems.filter((item) => item.id !== id);
-      const updatedOverItems = [
-        ...overItems.slice(0, newIndex),
-        movedItem,
-        ...overItems.slice(newIndex),
-      ];
+        return {
+          ...prev,
+          [activeContainer]: updatedActiveItems,
+        };
+      });
+    } else {
+      setItems((prev) => {
+        const activeItems = prev[activeContainer];
+        const overItems = prev[overContainer];
+        const activeIndex = activeItems.findIndex((item) => item.id === id);
+        const overIndex = overItems.findIndex((item) => item.id === overId);
+        const newIndex = overIndex >= 0 ? overIndex : overItems.length;
 
-      return {
-        ...prev,
-        [activeContainer]: updatedActiveItems,
-        [overContainer]: updatedOverItems,
-      };
-    });
+        const movedItem = activeItems[activeIndex];
+        const updatedActiveItems = activeItems.filter((item) => item.id !== id);
+        const updatedOverItems = [
+          ...overItems.slice(0, newIndex),
+          movedItem,
+          ...overItems.slice(newIndex),
+        ];
+
+        return {
+          ...prev,
+          [activeContainer]: updatedActiveItems,
+          [overContainer]: updatedOverItems,
+        };
+      });
+    }
   }
 
   function findContainer(itemId: number | string) {
@@ -97,6 +112,7 @@ function App() {
     }
     return null;
   }
+
 
 
   function handleDragEnd() {
@@ -118,6 +134,7 @@ function App() {
         >
           <Container id="assined" toAssin={true} items={items.assined} />
           <Container id="toAssin" toAssin={false} items={items.toAssin} />
+          <Container id="voided" toAssin={false} items={items.voided} />
         </DndContext>
       </Grid>
     </Paper>
